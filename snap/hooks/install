@@ -1,0 +1,9 @@
+#!/bin/sh -e
+
+mkdir -p $SNAP_DATA/home/users
+
+sed $SNAP/node_modules/thelounge/defaults/config.js \
+    -e 's/\(prefetch: \)false/\1true/' \
+    -e 's|\(theme: "themes/\)example.css"|\1zenburn.css"|' \
+    > $SNAP_DATA/home/config.js
+
