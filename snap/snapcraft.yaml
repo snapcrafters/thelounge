@@ -8,6 +8,7 @@ description: |
  * **Cross platform.** It doesn't matter what OS you use, it just works wherever Node.js runs.
  * **Responsive interface.** The client works smoothly on every desktop, smartphone and tablet.
  * **Synchronized experience.** Always resume where you left off no matter what device.
+base: core18
 
 grade: devel
 confinement: strict
@@ -29,6 +30,7 @@ parts:
     source: https://github.com/thelounge/thelounge
     source-type: git
     plugin: nodejs
+    node-engine: 8.10.0
     node-package-manager: yarn
     npm-run: [build]
     override-build: |
