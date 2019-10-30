@@ -8,19 +8,24 @@ description: |
  * **Responsive interface.** The client works smoothly on every desktop, smartphone and tablet.
  * **Synchronized experience.** Always resume where you left off no matter what device.
 
+base: core
 grade: devel
 confinement: strict
 
 environment:
   LOUNGE_HOME: $SNAP_DATA/home
 
+layout:
+  $SNAP/.thelounge_home:
+    bind-file: $SNAP/package/.thelounge_home
+
 apps:
   lounged:
-    command: lounge start
+    command: bin/thelounge start
     daemon: simple
     plugs: [network-bind]
-  lounge:
-    command: lounge
+  thelounge:
+    command: bin/thelounge
     plugs: [network-bind]
 
 parts:
@@ -28,8 +33,7 @@ parts:
     source: https://github.com/thelounge/thelounge
     source-type: git
     plugin: nodejs
-    node-package-manager: yarn
-    npm-run: [build]
+    nodejs-package-manager: yarn
     override-pull: |
       snapcraftctl pull
       last_committed_tag="$(git describe --tags --abbrev=0)"
@@ -43,9 +47,10 @@ parts:
       else
         snapcraftctl set-version "$(git rev-parse --short HEAD)"
       fi
+  hack:
+    plugin: nil
+    source: .
     override-build: |
       snapcraftctl build
-      # This is here to avoid a loading issue as defaultHome is called
-      # before setting it through program.home or process.env.LOUNGE_HOME
-      echo /tmp >> $SNAPCRAFT_PART_INSTALL/node_modules/thelounge/.lounge_home
+      echo /tmp > $SNAPCRAFT_STAGE/.thelounge_home
 
