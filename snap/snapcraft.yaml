@@ -66,6 +66,8 @@ parts:
       $CMD build
 
       snapcraftctl build
+    prime:
+    - -**/.*.swp # Exclude rogue vim swap files from node-tar package
 
   hack:
     after: [thelounge]
