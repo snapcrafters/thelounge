@@ -15,7 +15,7 @@ description: |
  Replace `$USER` with your preferred Lounge username. You will be prompted to add a password once you've authenticated for sudo. When you have added your username navigate to http://localhost:9000/ (replace localhost with your server IP or hostname if you are on a different machine) and login with your new username and password.
 
 base: core18
-grade: devel
+grade: stable
 confinement: strict
 
 environment:
