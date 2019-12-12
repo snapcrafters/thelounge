@@ -72,6 +72,9 @@ parts:
       $CMD build
 
       snapcraftctl build
+    build-packages:
+    - build-essential
+    - python
     prime:
     - -**/.*.swp # Exclude rogue vim swap files from node-tar package
 
