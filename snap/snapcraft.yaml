@@ -19,7 +19,6 @@ grade: stable
 confinement: strict
 
 architectures:
-  - build-on: i386
   - build-on: amd64
   - build-on: armhf
   - build-on: arm64
