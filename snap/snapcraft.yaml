@@ -68,7 +68,7 @@ parts:
       [ -n "$https_proxy" ] && CMD="$CMD --https-proxy $https_proxy"
 
       $CMD install
-      $CMD build
+      NODE_ENV=production $CMD build
 
       snapcraftctl build
     build-packages:
