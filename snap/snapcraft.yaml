@@ -8,11 +8,48 @@ description: |
  * **Responsive interface.** The client works smoothly on every desktop, smartphone and tablet.
  * **Synchronized experience.** Always resume where you left off no matter what device.
 
+ ## Default port
+
+ By default thelounge listens on TCP port 9000.
+
+ ## Create users
+
  After installing run the following in a terminal/console:
 
  `sudo thelounge add $USER`
 
  Replace `$USER` with your preferred Lounge username. You will be prompted to add a password once you've authenticated for sudo. When you have added your username navigate to http://localhost:9000/ (replace localhost with your server IP or hostname if you are on a different machine) and login with your new username and password.
+
+ ## Enable https
+
+ **For this to work, port 80 on your device must be Internet accessible.**
+
+ Run the following in a terminal/console:
+
+ `sudo thelounge.cert-generate`
+
+ Enter your email address, agree to the terms of service and enter your
+ domain when prompted.
+
+ Update the `https` stanza in thelounge configuration, replacing `example.org` with your domain.
+
+ `sudo nano /var/snap/thelounge/current/home/config.js`
+
+ The `https` stanza should look something like this:
+
+ ```
+ https: {
+        enable: true,
+        key: "/var/snap/thelounge/common/letsencrypt/live/example.org/privkey.pem",
+        certificate: "/var/snap/thelounge/common/letsencrypt/live/example.org/fullchain.pem",
+        ca: "",
+ },
+ ```
+
+ Restart thelounge to enable https.
+
+ `sudo snap restart thelounge`
+ 
 
 base: core18
 grade: stable
