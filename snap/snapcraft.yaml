@@ -42,6 +42,31 @@ apps:
     plugs:
     - network
     - network-bind
+  cert-generate:
+    command: certbot certonly --standalone --logs-dir $SNAP_COMMON/letsencrypt/log --config-dir $SNAP_COMMON/letsencrypt/ --work-dir $SNAP_COMMON/letsencrypt/ --no-eff-email
+    environment:
+      AUGEAS_LENS_LIB: "$SNAP/usr/share/augeas/lenses/dist"
+    plugs:
+      - network
+      - network-bind
+  cert-renew:
+    command: certbot -q renew --logs-dir $SNAP_COMMON/letsencrypt/log --config-dir $SNAP_COMMON/letsencrypt/ --work-dir $SNAP_COMMON/letsencrypt/ --no-eff-email
+    daemon: oneshot
+    environment:
+      AUGEAS_LENS_LIB: $SNAP/usr/share/augeas/lenses/dist
+    plugs:
+      - network
+      - network-bind
+    passthrough:
+        # Run approximately twice a day with randomization
+        timer: 00:00~24:00/2
+  cert-renew-manual:
+    command: certbot -q renew --logs-dir $SNAP_COMMON/letsencrypt/log --config-dir $SNAP_COMMON/letsencrypt/ --work-dir $SNAP_COMMON/letsencrypt/ --no-eff-email
+    environment:
+      AUGEAS_LENS_LIB: $SNAP/usr/share/augeas/lenses/dist
+    plugs:
+      - network
+      - network-bind
 
 parts:
   thelounge:
@@ -74,6 +99,8 @@ parts:
     build-packages:
     - build-essential
     - python
+    stage-snaps:
+      - certbot/latest/edge
     prime:
     - -**/.*.swp # Exclude rogue vim swap files from node-tar package
 
