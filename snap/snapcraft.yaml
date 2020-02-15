@@ -106,6 +106,14 @@ apps:
       - network-bind
 
 parts:
+  certbot:
+    plugin: python
+    python-packages: [certbot]
+    build-packages:
+      - libffi-dev
+      - libcurl4-openssl-dev
+      - libssl-dev
+      - python3-dev
   thelounge:
     source: https://github.com/thelounge/thelounge.git
     plugin: nodejs
@@ -136,8 +144,8 @@ parts:
     build-packages:
     - build-essential
     - python
-    stage-snaps:
-      - certbot/latest/edge
+#    stage-snaps:
+#      - certbot/latest/edge
     prime:
     - -**/.*.swp # Exclude rogue vim swap files from node-tar package
 
