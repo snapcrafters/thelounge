@@ -108,7 +108,9 @@ apps:
 parts:
   certbot:
     plugin: python
-    python-packages: [certbot]
+    python-packages:
+      - setuptools-rust>=0.11.4
+      - certbot
     build-packages:
       - libffi-dev
       - libcurl4-openssl-dev
