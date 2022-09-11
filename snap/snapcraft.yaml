@@ -119,7 +119,7 @@ parts:
   thelounge:
     source: https://github.com/thelounge/thelounge.git
     plugin: nodejs
-    nodejs-version: '12.13.0'
+    nodejs-version: '16.17.0'
     override-pull: |
       snapcraftctl pull
       last_committed_tag="$(git describe --tags --abbrev=0 --match 'v*' --exclude '*-pre.*' --exclude '*-rc.*')"
