@@ -2,7 +2,7 @@
 
 mkdir -p $SNAP_DATA/home/users
 
-sed $SNAP/defaults/config.js \
+sed $SNAP/lib/node_modules/thelounge/dist/defaults/config.js \
     -e 's|\(theme: "themes/\)example.css"|\1zenburn.css"|' \
     > $SNAP_DATA/home/config.js
 
