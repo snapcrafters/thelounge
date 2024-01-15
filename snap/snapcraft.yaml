@@ -51,7 +51,7 @@ description: |
  `sudo snap restart thelounge`
  
 
-base: core18
+base: core22
 grade: stable
 confinement: strict
 
@@ -80,14 +80,14 @@ apps:
     - network
     - network-bind
   cert-generate:
-    command: certbot certonly --standalone --logs-dir $SNAP_COMMON/letsencrypt/log --config-dir $SNAP_COMMON/letsencrypt/ --work-dir $SNAP_COMMON/letsencrypt/ --no-eff-email
+    command: bin/certbot certonly --standalone --logs-dir $SNAP_COMMON/letsencrypt/log --config-dir $SNAP_COMMON/letsencrypt/ --work-dir $SNAP_COMMON/letsencrypt/ --no-eff-email
     environment:
       AUGEAS_LENS_LIB: "$SNAP/usr/share/augeas/lenses/dist"
     plugs:
       - network
       - network-bind
   cert-renew:
-    command: certbot -q renew --logs-dir $SNAP_COMMON/letsencrypt/log --config-dir $SNAP_COMMON/letsencrypt/ --work-dir $SNAP_COMMON/letsencrypt/ --no-eff-email
+    command: bin/certbot -q renew --logs-dir $SNAP_COMMON/letsencrypt/log --config-dir $SNAP_COMMON/letsencrypt/ --work-dir $SNAP_COMMON/letsencrypt/ --no-eff-email
     daemon: oneshot
     environment:
       AUGEAS_LENS_LIB: $SNAP/usr/share/augeas/lenses/dist
@@ -98,7 +98,7 @@ apps:
         # Run approximately twice a day with randomization
         timer: 00:00~24:00/2
   cert-renew-manual:
-    command: certbot -q renew --logs-dir $SNAP_COMMON/letsencrypt/log --config-dir $SNAP_COMMON/letsencrypt/ --work-dir $SNAP_COMMON/letsencrypt/ --no-eff-email
+    command: bin/certbot -q renew --logs-dir $SNAP_COMMON/letsencrypt/log --config-dir $SNAP_COMMON/letsencrypt/ --work-dir $SNAP_COMMON/letsencrypt/ --no-eff-email
     environment:
       AUGEAS_LENS_LIB: $SNAP/usr/share/augeas/lenses/dist
     plugs:
@@ -108,6 +108,7 @@ apps:
 parts:
   certbot:
     plugin: python
+    source: .
     python-packages:
       - setuptools-rust>=0.11.4
       - certbot
@@ -116,12 +117,19 @@ parts:
       - libcurl4-openssl-dev
       - libssl-dev
       - python3-dev
+
+  npm-deps:
+    plugin: npm
+    source: npm-deps
+    npm-include-node: true
+    npm-node-version: '20.11.0'
+
   thelounge:
+    after: [npm-deps]
     source: https://github.com/thelounge/thelounge.git
-    plugin: nodejs
-    nodejs-version: '16.17.0'
+    plugin: npm
     override-pull: |
-      snapcraftctl pull
+      craftctl default
       last_committed_tag="$(git describe --tags --abbrev=0 --match 'v*' --exclude '*-pre.*' --exclude '*-rc.*')"
       last_released_tag="$(snap info $SNAPCRAFT_PROJECT_NAME | awk '$1 == "beta:" { print $2 }')"
       # If the latest tag from the upstream project has not been released to
@@ -134,18 +142,17 @@ parts:
         snapcraftctl set-version "$(git rev-parse --short HEAD)"
       fi
     override-build: |
-      export PATH="$PATH:$SNAPCRAFT_PART_SRC/../npm/bin"
-      CMD=yarn
-      [ -n "$http_proxy" ] && CMD="$CMD --proxy $http_proxy"
-      [ -n "$https_proxy" ] && CMD="$CMD --https-proxy $https_proxy"
+      CMD=npm
+      if [ -n "${http_proxy:=}" ]; then CMD="$CMD --proxy $http_proxy"; fi
+      if [ -n "${https_proxy:=}" ]; then CMD="$CMD --https-proxy $https_proxy"; fi
 
       $CMD install
-      NODE_ENV=production $CMD build
+      NODE_ENV=production $CMD run build
 
-      snapcraftctl build
+      craftctl default
     build-packages:
     - build-essential
-    - python
+    - python3
 #    stage-snaps:
 #      - certbot/latest/edge
     prime:
