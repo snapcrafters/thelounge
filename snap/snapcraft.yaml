@@ -51,7 +51,7 @@ description: |
  `sudo snap restart thelounge`
  
 
-base: core18
+base: core22
 grade: stable
 confinement: strict
 
@@ -61,7 +61,8 @@ architectures:
   - build-on: arm64
 
 environment:
-  LOUNGE_HOME: /var/thelounge
+  THELOUNGE_HOME: /var/thelounge
+  AUGEAS_LENS_LIB: $SNAP/usr/share/augeas/lenses/dist
 
 layout:
   /var/thelounge:
@@ -80,17 +81,13 @@ apps:
     - network
     - network-bind
   cert-generate:
-    command: certbot certonly --standalone --logs-dir $SNAP_COMMON/letsencrypt/log --config-dir $SNAP_COMMON/letsencrypt/ --work-dir $SNAP_COMMON/letsencrypt/ --no-eff-email
-    environment:
-      AUGEAS_LENS_LIB: "$SNAP/usr/share/augeas/lenses/dist"
+    command: bin/certbot certonly --standalone --logs-dir $SNAP_COMMON/letsencrypt/log --config-dir $SNAP_COMMON/letsencrypt/ --work-dir $SNAP_COMMON/letsencrypt/ --no-eff-email
     plugs:
       - network
       - network-bind
   cert-renew:
-    command: certbot -q renew --logs-dir $SNAP_COMMON/letsencrypt/log --config-dir $SNAP_COMMON/letsencrypt/ --work-dir $SNAP_COMMON/letsencrypt/ --no-eff-email
+    command: bin/certbot -q renew --logs-dir $SNAP_COMMON/letsencrypt/log --config-dir $SNAP_COMMON/letsencrypt/ --work-dir $SNAP_COMMON/letsencrypt/ --no-eff-email
     daemon: oneshot
-    environment:
-      AUGEAS_LENS_LIB: $SNAP/usr/share/augeas/lenses/dist
     plugs:
       - network
       - network-bind
@@ -98,9 +95,7 @@ apps:
         # Run approximately twice a day with randomization
         timer: 00:00~24:00/2
   cert-renew-manual:
-    command: certbot -q renew --logs-dir $SNAP_COMMON/letsencrypt/log --config-dir $SNAP_COMMON/letsencrypt/ --work-dir $SNAP_COMMON/letsencrypt/ --no-eff-email
-    environment:
-      AUGEAS_LENS_LIB: $SNAP/usr/share/augeas/lenses/dist
+    command: bin/certbot -q renew --logs-dir $SNAP_COMMON/letsencrypt/log --config-dir $SNAP_COMMON/letsencrypt/ --work-dir $SNAP_COMMON/letsencrypt/ --no-eff-email
     plugs:
       - network
       - network-bind
@@ -108,6 +103,7 @@ apps:
 parts:
   certbot:
     plugin: python
+    source: .
     python-packages:
       - setuptools-rust>=0.11.4
       - certbot
@@ -116,12 +112,21 @@ parts:
       - libcurl4-openssl-dev
       - libssl-dev
       - python3-dev
+
+  npm-deps:
+    plugin: npm
+    source: npm-deps
+    npm-include-node: true
+    npm-node-version: '20'
+    prime: [-lib/node_modules/npm_deps]
+
   thelounge:
+    after: [npm-deps]
     source: https://github.com/thelounge/thelounge.git
-    plugin: nodejs
-    nodejs-version: '16.17.0'
+    plugin: npm
+    npm-include-node: false
     override-pull: |
-      snapcraftctl pull
+      craftctl default
       last_committed_tag="$(git describe --tags --abbrev=0 --match 'v*' --exclude '*-pre.*' --exclude '*-rc.*')"
       last_released_tag="$(snap info $SNAPCRAFT_PROJECT_NAME | awk '$1 == "beta:" { print $2 }')"
       # If the latest tag from the upstream project has not been released to
@@ -129,32 +134,21 @@ parts:
       if [ "${last_committed_tag}" != "${last_released_tag}" ]; then
         git fetch
         git checkout "${last_committed_tag}"
-        snapcraftctl set-version "${last_committed_tag#v}"
+        craftctl set version="${last_committed_tag#v}"
       else
-        snapcraftctl set-version "$(git rev-parse --short HEAD)"
+        craftctl set version="$(git rev-parse --short HEAD)"
       fi
     override-build: |
-      export PATH="$PATH:$SNAPCRAFT_PART_SRC/../npm/bin"
-      CMD=yarn
-      [ -n "$http_proxy" ] && CMD="$CMD --proxy $http_proxy"
-      [ -n "$https_proxy" ] && CMD="$CMD --https-proxy $https_proxy"
-
-      $CMD install
-      NODE_ENV=production $CMD build
-
-      snapcraftctl build
+      export NODE_ENV=
+      corepack enable
+      yarn set version classic
+      yarn --non-interactive --frozen-lockfile --cache-folder .yarn-cache --ignore-scripts install
+      npx update-browserslist-db@latest
+      NODE_ENV=production yarn --non-interactive --frozen-lockfile --cache-folder .yarn-cache --offline --ignore-scripts build && \
+        craftctl default
     build-packages:
     - build-essential
-    - python
-#    stage-snaps:
-#      - certbot/latest/edge
+    - python3
     prime:
     - -**/.*.swp # Exclude rogue vim swap files from node-tar package
-
-  hack:
-    after: [thelounge]
-    plugin: nil
-    source: https://github.com/thelounge/thelounge.git
-    override-prime: |
-      echo /var/thelounge > $SNAPCRAFT_PRIME/.thelounge_home
 
